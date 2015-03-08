@@ -58,8 +58,8 @@ void function() {
 		return this;
 	};
 
-	var Node = MultiCore.Node = function( func ) {
-		Object.defineProperty( this, 'func', { value: func } );
+	var Node = MultiCore.Node = function( fn ) {
+		Object.defineProperty( this, 'fn', { value: fn } );
 		this.worker = new Worker( scriptPath );
 		this.tasks = [];
 		this.paused = false;
@@ -90,7 +90,7 @@ void function() {
 			_this.trigger.apply( _this, args );
 			!_this.active || _this.active.trigger.apply( _this.active, args );
 		}
-		this.emit('_init', this.func.toString());
+		this.emit('_init', this.fn.toString());
 	};
 	Node.prototype.reset = function() {
 		this.worker.terminate();
@@ -151,16 +151,16 @@ void function() {
 		delete this.active;
 	};
 
-	var Cluster = MultiCore.Cluster = function( num, func ) {
-		if (typeof num == 'function' && !func) {
-			var func = num;
+	var Cluster = MultiCore.Cluster = function( num, fn ) {
+		if (typeof num == 'function' && !fn) {
+			var fn = num;
 			var num = 1;
 		}
 		num > 0 || (num = 1);
 		this.nodes = [];
 		this.tasks = [];
 		while (num-- > 0) {
-			var node = new Node( func );
+			var node = new Node( fn );
 			node.tasks = this.tasks;
 			this.nodes.push(node);
 		}
@@ -215,7 +215,8 @@ void function() {
 			eval('func = '+ context +'');
 		});
 		node.on('_exec', function() {
-			func.apply( node, [].concat( slice.call(arguments), node.done) );
+			var result = func.apply( node, [].concat( slice.call(arguments), node.done) );
+			result === undefined || node.done( result );
 		});
 	}
 

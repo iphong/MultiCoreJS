@@ -34,11 +34,8 @@
 		<button class="resume">Resume</button>
 		<button class="reset">Reset</button>
 		<script>
-			var fib = MultiCore( 4, function( n, callback ) {
-				function fibonacci(n) {
-					return n < 2 ? n : fibonacci(n - 1) + fibonacci(n - 2);
-				}
-				callback( fibonacci(n) );
+			var fib = MultiCore( 4, function fibonacci(n) {
+				return n < 2 ? n : fibonacci(n - 1) + fibonacci(n - 2);
 			});
 
 			function run() {
