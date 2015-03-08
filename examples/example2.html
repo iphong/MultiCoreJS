@@ -5,7 +5,7 @@
 		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
-		<script src="../multicore.js"></script>
+		<script src="../multicore2.js"></script>
 		<style>
 			.wrapper {
 				width: 500px;
@@ -34,7 +34,7 @@
 		<button class="resume">Resume</button>
 		<button class="reset">Reset</button>
 		<script>
-			var fib = MultiCore( 4, function fibonacci(n) {
+			var fib = MultiCore.exec( function fibonacci(n) {
 				return n < 2 ? n : fibonacci(n - 1) + fibonacci(n - 2);
 			});
 

@@ -6,7 +6,7 @@
 		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
-		<script src="../multicore2.js"></script>
+		<script src="../multicore.js"></script>
 		<style>
 			body {
 				font: 14px/1.2 "Helvetica Neue";
@@ -75,21 +75,19 @@
 			<ul class="files"></ul>
 		</div>
 		<script>
-			var ajaxUpload = MultiCore.spawn( function( uploadURL, data ) {
-				var self = this;
-				var req = new XMLHttpRequest;
-				emit('start');
-				req.open('POST', uploadURL, data);
-				req.upload.addEventListener('progress',function( e ) {
-					emit('progress', e.loaded, e.total);
-				});
-				req.upload.addEventListener('load',function( e ) {
-					emit('uploaded');
-				});
-				req.addEventListener('loadend', function() {
-					emit('completed');
-				});
-				req.send(data);
+			var readFile = MultiCore( 4, function( file, encoding, done ) {
+				var reader = new FileReaderSync;
+				switch (encoding) {
+					case 'text':
+						return reader.readAsText(file);
+					case 'base64':
+						return reader.readAsDataURL(file);
+					case 'binary':
+						return reader.readAsBinaryString(file);
+					case 'array-buffer':
+						return reader.readAsArrayBuffer(file);
+
+				}
 			});
 
 			$('body').on('dragenter', function(e) {
@@ -102,6 +100,12 @@
 				e.preventDefault();
 				_.each(e.originalEvent.dataTransfer.files, function( file ) {
 
+					readFile.queue( file, 'base64' ).done(function( data ) {
+						console.log('Read file "' + file.name + '" SUCCESS');
+					});
+
+					return;
+
 					var $file = $('<li class="file">')
 							.appendTo('.files')
 							.append('<div class="icon"><span class="fa fa-file-o"></span> </div>')
@@ -113,7 +117,7 @@
 
 					window.scrollY += 100;
 
-					ajaxUpload('http://128.199.132.114:3000/upload', file )
+					ajaxUpload.queue('http://128.199.132.114:3000/upload', file)
 							.on('start', function() {
 								$file.addClass('active')
 								$status.text('uploading...');
@@ -130,7 +134,7 @@
 							.on('uploaded', function() {
 								$status.text('finishing...');
 							})
-							.on('completed', function() {
+							.on('success', function() {
 								$file.addClass('done');
 								$status.text('uploaded.');
 								$progress.remove();

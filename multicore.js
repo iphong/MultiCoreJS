@@ -192,7 +192,7 @@ void function() {
 
 
 	if (typeof root.document == 'undefined') {
-		var func;
+		var fn;
 		var node = new Events;
 		node.emit = function() {
 			//console.log('WORKER SENT::', arguments);
@@ -201,23 +201,50 @@ void function() {
 		node.done = function() {
 			node.emit.apply( node, ['success'].concat( slice.call(arguments) ) );
 		};
-		root.onmessage = function( e ) {
+		node.on('_init', function( context ) {
+			eval('fn = '+ context +'');
+		});
+		node.on('_exec', function() {
+			var result = fn.apply( node, [].concat( slice.call(arguments), node.done) );
+			result === undefined || node.done( result );
+		});
+		node.on('execute', function( context, args ) {
+			eval('var fn = '+ context +'');
+			node.emit('success', fn.apply(null, args));
+		});
+
+		onmessage = function( e ) {
 			var args = [];
 			for (var key in e.data)
 				args.push( e.data[key] );
 			//console.log('WORKER RECEIVED::', args);
 			node.trigger.apply( node, args );
 		};
-		root.onerror = function( e ) {
+		onerror = function( e ) {
 			node.emit.apply( node, ['error'].concat( slice.call(arguments) ) );
 		}
-		node.on('_init', function( context ) {
-			eval('func = '+ context +'');
-		});
-		node.on('_exec', function() {
-			var result = func.apply( node, [].concat( slice.call(arguments), node.done) );
-			result === undefined || node.done( result );
-		});
+	}
+
+	MultiCore.fn = function( fn ) {
+		return function() {
+			var args = slice.call(arguments);
+			return new Promise(function( resolve, reject ) {
+				var worker = new Worker( scriptPath );
+				worker.postMessage([ 'execute', fn.toString(), args ]);
+				worker.onmessage = function( e ) {
+					var args = [];
+					for (var key in e.data)
+						args.push( e.data[key] );
+					var action = args.shift();
+					switch (action) {
+						case 'success':
+							resolve.apply( null, args );
+						case 'error':
+							reject.apply( null, args );
+					}
+				}
+			})
+		}
 	}
 
 }.call( this );
