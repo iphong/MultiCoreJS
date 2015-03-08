@@ -1,0 +1,69 @@
+<html>
+	<head>
+		<title>Compute</title>
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/css/bootstrap.min.css">
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
+		<script src="multicore.js"></script>
+		<style>
+			.wrapper {
+				width: 500px;
+			}
+			.cell {
+				background: silver;
+				border: none;
+				margin: 1px;
+				width: 48px;
+				height: 48px;
+
+				font-size: 16px;
+				color: #fff;
+			}
+			.cell.active {
+				outline: 2px solid #333;
+			}
+			.cell.done {
+				background: green;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrapper"></div>
+		<button class="pause">Pause</button>
+		<button class="resume">Resume</button>
+		<button class="reset">Reset</button>
+		<script>
+			var fib = MultiCore( 4, function( n, callback ) {
+				function fibonacci(n) {
+					return n < 2 ? n : fibonacci(n - 1) + fibonacci(n - 2);
+				}
+				callback( fibonacci(n) );
+			});
+
+			function run() {
+				fib.clear();
+				$('.wrapper').empty();
+
+				_(100).times(function( i ) {
+					var num = _.random(30,40);
+					var btn = $('<button class="cell">').text('?').appendTo('.wrapper');
+					fib.queue( num)
+							.on('pause', function() {
+								btn.removeClass('active');
+							})
+							.start(function() {
+								btn.addClass('active');
+							})
+							.done(function( result ) {
+								btn.removeClass('active').addClass('done').text( num );
+							});
+				});
+			}
+			$('.pause').click(fib.pause.bind(fib));
+			$('.resume').click(fib.resume.bind(fib));
+			$('.reset').click(run);
+			run();
+		</script>
+	</body>
+</html>
